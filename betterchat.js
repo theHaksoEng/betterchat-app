@@ -21,6 +21,13 @@ console.log("🧪 ENV DEBUG:", {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const characterVoices = {
+  fatima: "pFZP5JQG7iQjIQuC4Bku",
+  // add others here like:
+  // ibrahim: "VOICE_ID_2",
+  // anika: "VOICE_ID_3",
+};
+
 // ✅ Quick server test route
 app.get("/ping", (req, res) => {
   res.send("🏓 Server is responding");
@@ -127,7 +134,7 @@ app.post("/chatbase", async (req, res) => {
       response.data.choices?.[0]?.message?.content ||
       response.data.reply ||
       null;
-      
+
       console.log("📦 Raw Chatbase response:", JSON.stringify(response.data, null, 2));
 
     if (!reply) {
@@ -153,6 +160,25 @@ app.post("/speakbase", async (req, res) => {
   try {
     const userText = req.body.text;
 
+    // 🗺️ Map of character voice IDs
+    const characterVoices = {
+      fatima: "pFZP5JQG7iQjIQuC4Bku"
+      // add more characters here later
+    };
+
+    // 🧠 Default to system voice
+    let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
+
+    // 🔍 Detect character name in user input
+    const nameDetected = Object.keys(characterVoices).find(name =>
+      userText.toLowerCase().includes(name)
+    );
+    if (nameDetected) {
+      selectedVoiceId = characterVoices[nameDetected];
+      console.log(`🎭 Detected character: ${nameDetected} → using voice ID: ${selectedVoiceId}`);
+    }
+
+    // 💬 Send to Chatbase
     const chatResponse = await axios.post(
       "http://localhost:3000/chatbase",
       { text: userText },
@@ -161,9 +187,10 @@ app.post("/speakbase", async (req, res) => {
 
     const spokenText = chatResponse.data.text;
 
+    // 🔊 Generate voice with correct voice ID
     const voiceResponse = await axios({
       method: "POST",
-      url: `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVEN_VOICE_ID}`,
+      url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
       headers: {
         "xi-api-key": process.env.ELEVEN_API_KEY,
         "Content-Type": "application/json"
