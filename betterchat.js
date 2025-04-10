@@ -21,18 +21,6 @@ console.log("🧪 ENV DEBUG:", {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const characterVoices = {
-  fatima: "pFZP5JQG7iQjIQuC4Bku",
-  // add others here like:
-  // ibrahim: "VOICE_ID_2",
-  // anika: "VOICE_ID_3",
-};
-
-// ✅ Quick server test route
-app.get("/ping", (req, res) => {
-  res.send("🏓 Server is responding");
-});
-
 // Root route
 app.get("/", (req, res) => {
   res.send("Welcome to BetterChat! The chatbot that improves conversations.");
@@ -100,12 +88,11 @@ app.post("/speak", async (req, res) => {
   }
 });
 
-// 💬 Chatbase chatbot route - Champion Edition
+// Chatbase chatbot route
 app.post("/chatbase", async (req, res) => {
   try {
-    console.log("📢 /chatbase route was hit!");
     const userText = req.body.text;
-
+    console.log("📢 /chatbase route was hit!");
     console.log("🔥 Chatbase Request Triggered");
     console.log("🔑 Using bot ID:", process.env.CHATBASE_BOT_ID);
     console.log("📝 User said:", userText);
@@ -121,13 +108,9 @@ app.post("/chatbase", async (req, res) => {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.CHATBASE_API_KEY}`
-        },
-        timeout: 10000
+        }
       }
     );
-
-    console.log("📦 Full response from Chatbase:");
-    console.dir(response.data, { depth: null });
 
     const reply =
       response.data.text ||
@@ -135,7 +118,8 @@ app.post("/chatbase", async (req, res) => {
       response.data.reply ||
       null;
 
-      console.log("📦 Raw Chatbase response:", JSON.stringify(response.data, null, 2));
+    console.log("📦 Full response from Chatbase:", response.data);
+    console.log("📦 Raw Chatbase response:", JSON.stringify(response.data, null, 2));
 
     if (!reply) {
       console.error("⚠️ Could not extract reply from Chatbase response.");
@@ -144,9 +128,8 @@ app.post("/chatbase", async (req, res) => {
 
     console.log("✅ Final reply:", reply);
     res.json({ text: reply });
-
   } catch (error) {
-    console.error("❌ Chatbase Error Details:", {
+    console.error("💬 Chatbase Full Error:", {
       message: error.message,
       status: error?.response?.status,
       data: error?.response?.data
@@ -155,23 +138,21 @@ app.post("/chatbase", async (req, res) => {
   }
 });
 
-// Speakbase - Chatbase + ElevenLabs (with voice switching)
+// Speakbase - Chatbase + ElevenLabs (with voice switching + logs)
 app.post("/speakbase", async (req, res) => {
   try {
-    // 🗣️ Incoming user text
     const userText = req.body.text || "";
     const lowerCaseText = userText.toLowerCase();
 
     // 🗺️ Voice map
     const characterVoices = {
       fatima: "pFZP5JQG7iQjIQuC4Bku"
-      // Add more characters here later
     };
 
     // 🎯 Set default voice
     let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
 
-    // 🔍 Character detection
+    // 🔍 Detect character name in input
     const nameDetected = Object.keys(characterVoices).find(name =>
       lowerCaseText.includes(name)
     );
@@ -183,9 +164,9 @@ app.post("/speakbase", async (req, res) => {
     }
 
     console.log("📝 User input:", userText);
-    console.log("🎤 Voice ID selected:", selectedVoiceId);
+    console.log("🔊 Sending to ElevenLabs voice ID:", selectedVoiceId);
 
-    // 💬 Send to Chatbase
+    // 💬 Get Chatbase reply
     const chatResponse = await axios.post(
       "http://localhost:3000/chatbase",
       { text: userText },
@@ -194,7 +175,7 @@ app.post("/speakbase", async (req, res) => {
 
     const spokenText = chatResponse.data.text;
 
-    // 🔊 Generate voice
+    // 🔊 Generate voice using dynamic voice ID
     const voiceResponse = await axios({
       method: "POST",
       url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
@@ -224,7 +205,6 @@ app.post("/speakbase", async (req, res) => {
   }
 });
 
-// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
