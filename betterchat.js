@@ -127,6 +127,8 @@ app.post("/chatbase", async (req, res) => {
       response.data.choices?.[0]?.message?.content ||
       response.data.reply ||
       null;
+      
+      console.log("📦 Raw Chatbase response:", JSON.stringify(response.data, null, 2));
 
     if (!reply) {
       console.error("⚠️ Could not extract reply from Chatbase response.");
