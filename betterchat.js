@@ -155,28 +155,35 @@ app.post("/chatbase", async (req, res) => {
   }
 });
 
-// Speakbase - Chatbase + ElevenLabs
+// Speakbase - Chatbase + ElevenLabs (with voice switching)
 app.post("/speakbase", async (req, res) => {
   try {
-    const userText = req.body.text;
+    // 🗣️ Incoming user text
+    const userText = req.body.text || "";
+    const lowerCaseText = userText.toLowerCase();
 
-    // 🗺️ Map of character voice IDs
+    // 🗺️ Voice map
     const characterVoices = {
       fatima: "pFZP5JQG7iQjIQuC4Bku"
-      // add more characters here later
+      // Add more characters here later
     };
 
-    // 🧠 Default to system voice
+    // 🎯 Set default voice
     let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
 
-    // 🔍 Detect character name in user input
+    // 🔍 Character detection
     const nameDetected = Object.keys(characterVoices).find(name =>
-      userText.toLowerCase().includes(name)
+      lowerCaseText.includes(name)
     );
     if (nameDetected) {
       selectedVoiceId = characterVoices[nameDetected];
       console.log(`🎭 Detected character: ${nameDetected} → using voice ID: ${selectedVoiceId}`);
+    } else {
+      console.log("🎭 No character match found, using default voice.");
     }
+
+    console.log("📝 User input:", userText);
+    console.log("🎤 Voice ID selected:", selectedVoiceId);
 
     // 💬 Send to Chatbase
     const chatResponse = await axios.post(
@@ -187,7 +194,7 @@ app.post("/speakbase", async (req, res) => {
 
     const spokenText = chatResponse.data.text;
 
-    // 🔊 Generate voice with correct voice ID
+    // 🔊 Generate voice
     const voiceResponse = await axios({
       method: "POST",
       url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
