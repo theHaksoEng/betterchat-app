@@ -201,14 +201,24 @@ app.post("/speakbase", async (req, res) => {
     });
     res.send(voiceResponse.data);
   } catch (error) {
-    if (error.response && error.response.data) {
+    console.error("💥 Full SpeakBase Error:", {
+      message: error.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    });
+  
+    if (error.response?.data && Buffer.isBuffer(error.response.data)) {
       const decoded = Buffer.from(error.response.data).toString("utf8");
       console.error("🔊 ElevenLabs Error (decoded):", decoded);
+    } else if (error.response?.data) {
+      console.error("🔊 ElevenLabs Error (plain):", error.response.data);
     } else {
-      console.error("💬 SpeakBase Error:", error.message);
+      console.error("🔊 ElevenLabs Unknown Error:", error.message);
     }
-        res.status(500).send("SpeakBase generation error");
+  
+    res.status(500).send("SpeakBase generation error");
   }
+  
 });
 
 const PORT = process.env.PORT || 3000;
