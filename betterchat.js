@@ -146,9 +146,10 @@ app.post("/speakbase", async (req, res) => {
 
     // 🗺️ Voice map
     const characterVoices = {
-      fatima: "pFZP5JQG7iQjIQuC4Bku"
-      // add more characters here...
-    };
+      const characterVoices = {
+        fatima: "pFZP5JQG7iQjIQuC4Bku", // ← Lily's voice ID
+        lily: "pFZP5JQG7iQjIQuC4Bku"   // ← bonus trigger if user says "Lily"
+      };      
 
     // 🎯 Default to Aaron's voice
     let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
