@@ -146,26 +146,24 @@ app.post("/speakbase", async (req, res) => {
 
     // 🗺️ Voice map
     const characterVoices = {
-      const characterVoices = {
-        fatima: "pFZP5JQG7iQjIQuC4Bku", // ← Lily's voice ID
-        lily: "pFZP5JQG7iQjIQuC4Bku"   // ← bonus trigger if user says "Lily"
-      };      
+      fatima: "pFZP5JQG7iQjIQuC4Bku",
+      lily: "pFZP5JQG7iQjIQuC4Bku"
+    };
 
-    // 🎯 Default to Aaron's voice
+    // 🎯 Default to Aaron’s voice
     let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
 
-    // 🔍 Check if a known character name is mentioned
+    // 🔍 Detect name
     const nameDetected = Object.keys(characterVoices).find(name =>
       lowerCaseText.includes(name)
     );
 
     if (nameDetected) {
       selectedVoiceId = characterVoices[nameDetected];
-      console.log(`🎭 Detected character: ${nameDetected} → using voice ID: ${selectedVoiceId}`);
+      console.log(`🎭 Detected character: ${nameDetected} → ${selectedVoiceId}`);
     } else {
-      console.log("🎭 No character match found, using default voice.");
+      console.log("🎭 No match, using default voice.");
     }
-
     console.log("📝 Original user input:", userText);
     console.log("🔊 Selected Voice ID:", selectedVoiceId);
 
