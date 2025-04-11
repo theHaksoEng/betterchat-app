@@ -147,15 +147,17 @@ app.post("/speakbase", async (req, res) => {
     // 🗺️ Voice map
     const characterVoices = {
       fatima: "pFZP5JQG7iQjIQuC4Bku"
+      // add more characters here...
     };
 
-    // 🎯 Set default voice
+    // 🎯 Default to Aaron's voice
     let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
 
-    // 🔍 Detect character name in input
+    // 🔍 Check if a known character name is mentioned
     const nameDetected = Object.keys(characterVoices).find(name =>
       lowerCaseText.includes(name)
     );
+
     if (nameDetected) {
       selectedVoiceId = characterVoices[nameDetected];
       console.log(`🎭 Detected character: ${nameDetected} → using voice ID: ${selectedVoiceId}`);
@@ -163,10 +165,10 @@ app.post("/speakbase", async (req, res) => {
       console.log("🎭 No character match found, using default voice.");
     }
 
-    console.log("📝 User input:", userText);
-    console.log("🔊 Sending to ElevenLabs voice ID:", selectedVoiceId);
+    console.log("📝 Original user input:", userText);
+    console.log("🔊 Selected Voice ID:", selectedVoiceId);
 
-    // 💬 Get Chatbase reply
+    // 💬 Call Chatbase to get reply
     const chatResponse = await axios.post(
       "http://localhost:3000/chatbase",
       { text: userText },
@@ -174,8 +176,9 @@ app.post("/speakbase", async (req, res) => {
     );
 
     const spokenText = chatResponse.data.text;
+    console.log("💬 Chatbase replied:", spokenText);
 
-    // 🔊 Generate voice using dynamic voice ID
+    // 🔊 Send to ElevenLabs with the correct voice
     const voiceResponse = await axios({
       method: "POST",
       url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
