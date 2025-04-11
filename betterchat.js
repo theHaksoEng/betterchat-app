@@ -201,8 +201,13 @@ app.post("/speakbase", async (req, res) => {
     });
     res.send(voiceResponse.data);
   } catch (error) {
-    console.error("💬 SpeakBase Error:", error.message);
-    res.status(500).send("SpeakBase generation error");
+    if (error.response && error.response.data) {
+      const decoded = Buffer.from(error.response.data).toString("utf8");
+      console.error("🔊 ElevenLabs Error (decoded):", decoded);
+    } else {
+      console.error("💬 SpeakBase Error:", error.message);
+    }
+        res.status(500).send("SpeakBase generation error");
   }
 });
 
