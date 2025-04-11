@@ -137,7 +137,6 @@ app.post("/chatbase", async (req, res) => {
     res.status(500).send("Chatbase error");
   }
 });
-
 app.post("/speakbase", async (req, res) => {
   try {
     const userText = req.body.text || "";
@@ -145,7 +144,7 @@ app.post("/speakbase", async (req, res) => {
 
     // 🗺️ Voice map
     const characterVoices = {
-      fatima: "pFZP5JQG7iQjIQuC4Bku", // ← Lily's voice (Fatima)
+      fatima: "pFZP5JQG7iQjIQuC4Bku",
       lily: "pFZP5JQG7iQjIQuC4Bku"
     };
 
@@ -169,12 +168,17 @@ app.post("/speakbase", async (req, res) => {
 
     // 💬 Get response from Chatbase
     const chatResponse = await axios.post(
-      "http://localhost:3000/chatbase",
+      "https://betterchat-app.onrender.com/chatbase",    
       { text: userText },
       { headers: { "Content-Type": "application/json" } }
     );
 
     const spokenText = chatResponse.data.text;
+    console.log("🧮 Chatbase reply length:", spokenText.length);
+
+    // ✂️ Limit to 2400 characters
+    const maxCharacters = 2400;
+    const clippedText = spokenText.slice(0, maxCharacters);
 
     // 🔊 Generate speech with ElevenLabs
     const voiceResponse = await axios({
@@ -185,7 +189,7 @@ app.post("/speakbase", async (req, res) => {
         "Content-Type": "application/json"
       },
       data: {
-        text: spokenText,
+        text: clippedText,
         model_id: "eleven_monolingual_v1",
         voice_settings: {
           stability: 0.4,
@@ -206,7 +210,7 @@ app.post("/speakbase", async (req, res) => {
       status: error?.response?.status,
       data: error?.response?.data
     });
-  
+
     if (error.response?.data && Buffer.isBuffer(error.response.data)) {
       const decoded = Buffer.from(error.response.data).toString("utf8");
       console.error("🔊 ElevenLabs Error (decoded):", decoded);
@@ -215,10 +219,9 @@ app.post("/speakbase", async (req, res) => {
     } else {
       console.error("🔊 ElevenLabs Unknown Error:", error.message);
     }
-  
+
     res.status(500).send("SpeakBase generation error");
   }
-  
 });
 
 const PORT = process.env.PORT || 3000;
