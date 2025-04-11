@@ -138,7 +138,6 @@ app.post("/chatbase", async (req, res) => {
   }
 });
 
-// Speakbase - Chatbase + ElevenLabs (with voice switching + logs)
 app.post("/speakbase", async (req, res) => {
   try {
     const userText = req.body.text || "";
@@ -146,28 +145,29 @@ app.post("/speakbase", async (req, res) => {
 
     // 🗺️ Voice map
     const characterVoices = {
-      fatima: "pFZP5JQG7iQjIQuC4Bku",
+      fatima: "pFZP5JQG7iQjIQuC4Bku", // ← Lily's voice (Fatima)
       lily: "pFZP5JQG7iQjIQuC4Bku"
     };
 
-    // 🎯 Default to Aaron’s voice
+    // 🎯 Default voice (Aaron)
     let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
 
-    // 🔍 Detect name
+    // 🔍 Look for character name in user input
     const nameDetected = Object.keys(characterVoices).find(name =>
       lowerCaseText.includes(name)
     );
 
     if (nameDetected) {
       selectedVoiceId = characterVoices[nameDetected];
-      console.log(`🎭 Detected character: ${nameDetected} → ${selectedVoiceId}`);
+      console.log(`🎭 Detected character: ${nameDetected} → using voice ID: ${selectedVoiceId}`);
     } else {
-      console.log("🎭 No match, using default voice.");
+      console.log("🎭 No character match found, using default voice.");
     }
-    console.log("📝 Original user input:", userText);
-    console.log("🔊 Selected Voice ID:", selectedVoiceId);
 
-    // 💬 Call Chatbase to get reply
+    console.log("📝 User input:", userText);
+    console.log("🔊 Selected voice ID:", selectedVoiceId);
+
+    // 💬 Get response from Chatbase
     const chatResponse = await axios.post(
       "http://localhost:3000/chatbase",
       { text: userText },
@@ -175,9 +175,8 @@ app.post("/speakbase", async (req, res) => {
     );
 
     const spokenText = chatResponse.data.text;
-    console.log("💬 Chatbase replied:", spokenText);
 
-    // 🔊 Send to ElevenLabs with the correct voice
+    // 🔊 Generate speech with ElevenLabs
     const voiceResponse = await axios({
       method: "POST",
       url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
