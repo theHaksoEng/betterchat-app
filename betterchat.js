@@ -104,7 +104,8 @@ app.post("/speakbase", async (req, res) => {
       url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
       headers: {
         "xi-api-key": process.env.ELEVEN_API_KEY,
-        "Content-Type": "application/json"
+url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
+
       },
       data: {
         text: spokenText,
