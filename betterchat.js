@@ -35,27 +35,27 @@ app.get("/", (req, res) => {
 // Chat endpoint
 app.post("/chat", async (req, res) => {
   try {
-    const transcribedText = req.body.text;
+    const userText = req.body.text;
 
-    if (!transcribedText) {
-      return res.status(400).json({ error: "Missing text in request body." });
-    }
+    const chatbaseResponse = await axios.post(
+      `https://www.chatbase.co/api/v1/chat`,
+      {
+        messages: [{ role: "user", content: userText }],
+        chatbotId: process.env.CHATBASE_BOT_ID,
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${process.env.CHATBASE_API_KEY}`,
+          "Content-Type": "application/json",
+        }
+      }
+    );
 
-    const messages = [
-      { role: "system", content: "You are a helpful assistant with a warm voice." },
-      { role: "user", content: transcribedText }
-    ];
-
-    const chatResponse = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages
-    });
-
-    const chatResponseText = chatResponse.choices[0].message.content;
-    res.json({ text: chatResponseText });
+    const replyText = chatbaseResponse.data?.messages?.[0]?.content || "Sorry, I had trouble understanding you.";
+    res.json({ text: replyText });
   } catch (error) {
-    console.error("🔥 Chat Error:", error?.response?.data || error.message);
-    res.status(500).json({ error: "Chat error occurred." });
+    console.error("🔥 Chatbase error:", error?.response?.data || error.message);
+    res.status(500).send("Chatbase error");
   }
 });
 
@@ -91,12 +91,15 @@ app.post("/speakbase", async (req, res) => {
 
     const rawText = chatResponse.data.text;
     const spokenText = rawText
-      .replace(/\*\*(.*?)\*\*/g, "$1")
-      .replace(/\*/g, "")
-      .replace(/[_~`]/g, "")
-      .trim();
-
-    console.log("🗣 Text to speak:", spokenText);
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*/g, "")
+    .replace(/[_~`]/g, "")
+    .trim();
+  
+  // 👇 ADD THESE TWO LINES BELOW!
+  console.log("🗣 Text to send to ElevenLabs:", spokenText);
+  console.log("🎤 Using Voice ID:", selectedVoiceId);
+  
 
     // Get ElevenLabs voice
     const voiceResponse = await axios({
