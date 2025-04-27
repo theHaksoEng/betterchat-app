@@ -4,7 +4,6 @@ require("dotenv").config();
 // Import packages
 const express = require("express");
 const axios = require("axios");
-const OpenAI = require("openai").default;  // Corrected import
 const cors = require("cors");
 const fs = require("fs");
 
@@ -12,11 +11,6 @@ const fs = require("fs");
 const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
-
-// Create OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 // ENV Debug Printout
 console.log("🧪 ENV DEBUG:", {
@@ -32,22 +26,22 @@ app.get("/", (req, res) => {
   res.send("Welcome to BetterChat! The chatbot that improves conversations.");
 });
 
-// Chat endpoint
+// Chat endpoint (using Chatbase)
 app.post("/chat", async (req, res) => {
   try {
     const userText = req.body.text;
 
     const chatbaseResponse = await axios.post(
-      `https://www.chatbase.co/api/v1/chat`,
+      "https://www.chatbase.co/api/v1/chat",
       {
         messages: [{ role: "user", content: userText }],
         chatbotId: process.env.CHATBASE_BOT_ID,
       },
       {
         headers: {
-          "Authorization": `Bearer ${process.env.CHATBASE_API_KEY}`,
+          Authorization: `Bearer ${process.env.CHATBASE_API_KEY}`,
           "Content-Type": "application/json",
-        }
+        },
       }
     );
 
@@ -59,7 +53,7 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// Speakbase endpoint (Chat + ElevenLabs)
+// Speakbase endpoint (Chatbase + ElevenLabs voice)
 app.post("/speakbase", async (req, res) => {
   console.log("🌟 /speakbase was hit!");
 
@@ -68,7 +62,7 @@ app.post("/speakbase", async (req, res) => {
     const lowerCaseText = userText.toLowerCase();
 
     const characterVoices = {
-      fatima: process.env.FATIMA_VOICE_ID, // you can expand this later
+      fatima: process.env.FATIMA_VOICE_ID,
     };
 
     let selectedVoiceId = process.env.ELEVEN_VOICE_ID;
@@ -82,48 +76,44 @@ app.post("/speakbase", async (req, res) => {
       console.log(`🎩 Detected character: ${nameDetected}`);
     }
 
-    // Get chat response
+    // Get chat response from live server
     const chatResponse = await axios.post(
-      "http://localhost:3000/chat",
+      "https://betterchat-app.onrender.com/chat",
       { text: userText },
       { headers: { "Content-Type": "application/json" } }
     );
 
     const rawText = chatResponse.data.text;
     const spokenText = rawText
-    .replace(/\*\*(.*?)\*\*/g, "$1")
-    .replace(/\*/g, "")
-    .replace(/[_~`]/g, "")
-    .trim();
-  
-  // 👇 ADD THESE TWO LINES BELOW!
-  console.log("🗣 Text to send to ElevenLabs:", spokenText);
-  console.log("🎤 Using Voice ID:", selectedVoiceId);
-  
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/\*/g, "")
+      .replace(/[_~`]/g, "")
+      .trim();
 
-    // Get ElevenLabs voice
+    console.log("🗣 Text to send to ElevenLabs:", spokenText);
+    console.log("🎤 Using Voice ID:", selectedVoiceId);
+
     const voiceResponse = await axios({
       method: "POST",
       url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
       headers: {
         "xi-api-key": process.env.ELEVEN_API_KEY,
-url: `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
-
+        "Content-Type": "application/json",
       },
       data: {
         text: spokenText,
         model_id: "eleven_monolingual_v1",
         voice_settings: {
           stability: 0.4,
-          similarity_boost: 0.8
-        }
+          similarity_boost: 0.8,
+        },
       },
-      responseType: "arraybuffer"
+      responseType: "arraybuffer",
     });
 
     res.set({
       "Content-Type": "audio/mpeg",
-      "Content-Length": voiceResponse.data.length
+      "Content-Length": voiceResponse.data.length,
     });
     res.send(voiceResponse.data);
 
